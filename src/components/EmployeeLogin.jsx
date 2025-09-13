@@ -10,11 +10,12 @@ export default function EmployeeLogin() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        width:"97vw",
         background: "linear-gradient(135deg, #e8f5e9, #c8e6c9)",
         p: 2,
       }}
     >
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 3 }}>
+      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}>
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Avatar sx={{ m: 1, bgcolor: "success.main" }}>
             <WorkIcon />
@@ -28,7 +29,7 @@ export default function EmployeeLogin() {
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, borderRadius: 3, bgcolor: "success.main" }}
+              sx={{ mt: 3, mb: 2, borderRadius: 1, bgcolor: "success.main" }}
             >
               Sign In
             </Button>

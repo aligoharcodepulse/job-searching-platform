@@ -12,9 +12,10 @@ export default function CandidateLogin() {
         justifyContent: "center",
         background: "linear-gradient(135deg, #f3e5f5, #e1bee7)",
         p: 2,
+        width:"97vw"
       }}
     >
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 3 }}>
+      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}>
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
             <PersonIcon />
@@ -28,7 +29,7 @@ export default function CandidateLogin() {
             <Button
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, borderRadius: 3, bgcolor: "secondary.main" }}
+              sx={{ mt: 3, mb: 2, borderRadius: 1, bgcolor: "secondary.main" }}
             >
               Sign In
             </Button>

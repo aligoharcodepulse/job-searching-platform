@@ -42,7 +42,7 @@ export default function AdminLogin() {
     >
       <Paper
         elevation={6}
-        sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}
+        sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius:2}}
       >
         <Box
           sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}

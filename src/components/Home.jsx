@@ -72,6 +72,7 @@ export default function Home() {
             spacing={4}
             alignItems="center"
             justifyContent="center"
+            textAlign="center"
           >
             {/* Text Content */}
             <Grid item xs={12} md={6}>
