@@ -20,12 +20,13 @@ export default function AdminLogin() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ Hardcoded validation
     if (email === "admin@gmail.com" && password === "admin123") {
-      navigate("/admin-dashboard"); // redirect to AdminHome
+      localStorage.setItem("isAdmin", "true");  // save login
+      navigate("/admin-dashboard");
     } else {
       setError("Invalid credentials! Please try again.");
     }
+
   };
 
   return (
