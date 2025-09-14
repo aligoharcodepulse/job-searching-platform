@@ -5,14 +5,14 @@ import { auth, db } from "../../../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 
-export default function EmployeeHome() {
+export default function CandidateHome() {
   const { uid } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const docRef = doc(db, "employees", uid);
+      const docRef = doc(db, "candidates", uid);
       const snap = await getDoc(docRef);
       if (snap.exists()) setProfile(snap.data());
     };
@@ -21,8 +21,8 @@ export default function EmployeeHome() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    localStorage.removeItem("employeeAuth");
-    navigate("/employee");
+    localStorage.removeItem("candidateAuth");
+    navigate("/candidate");
   };
 
   return (
@@ -31,7 +31,7 @@ export default function EmployeeHome() {
       {profile ? (
         <>
           <Typography variant="h4" sx={{ mt: 2 }}>Welcome, {profile.email} 🎉</Typography>
-          <Typography variant="body1">This is your personal employee dashboard.</Typography>
+          <Typography variant="body1">This is your personal candidate dashboard.</Typography>
         </>
       ) : (
         <Typography>Loading...</Typography>

@@ -1,8 +1,79 @@
-import React from "react";
-import { Avatar, Button, TextField, Typography, Box, Paper, Link } from "@mui/material";
+import { useState } from "react";
+import {
+  Avatar,
+  Button,
+  TextField,
+  Typography,
+  Box,
+  Paper,
+  Link,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import { useNavigate } from "react-router-dom";
+import { auth, db } from "../../firebase/firebaseConfig";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export default function CandidateLogin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successModal, setSuccessModal] = useState(false); // ✅ success modal state
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        // ✅ Create Firebase User
+        const userCred = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        // ✅ Store candidate profile in Firestore
+        await setDoc(doc(db, "candidates", userCred.user.uid), {
+          email,
+          createdAt: new Date(),
+        });
+
+        setSuccessModal(true); // ✅ show success modal
+        setIsSignUp(false);
+      } else {
+        // ✅ Sign In
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+
+        const profileRef = doc(db, "candidates", userCred.user.uid);
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists()) {
+          localStorage.setItem("candidateAuth", userCred.user.uid);
+          navigate(`/candidate-dashboard/${userCred.user.uid}`);
+        } else {
+          setError("No profile found ❌");
+        }
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -10,36 +81,97 @@ export default function CandidateLogin() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #f3e5f5, #e1bee7)",
+        background: "linear-gradient(135deg, #e3f2fd, #bbdefb)",
         p: 2,
-        width:"97vw"
       }}
     >
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+      <Paper
+        elevation={6}
+        sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}
+      >
+        <Box
+          sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
             <PersonIcon />
           </Avatar>
           <Typography component="h1" variant="h5" fontWeight="bold">
-            Candidate Login
+            {isSignUp ? "Create Candidate Account" : "Candidate Login"}
           </Typography>
-          <Box component="form" noValidate sx={{ mt: 3 }}>
-            <TextField margin="normal" required fullWidth label="Candidate Email" type="email" />
-            <TextField margin="normal" required fullWidth label="Password" type="password" />
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+
+            {error && (
+              <Typography color="error" variant="body2">
+                {error}
+              </Typography>
+            )}
+
             <Button
+              type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, borderRadius: 1, bgcolor: "secondary.main" }}
+              disabled={loading}
+              sx={{ mt: 3, mb: 2, bgcolor: "primary.main" }}
             >
-              Sign In
+              {loading ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : isSignUp ? (
+                "Sign Up"
+              ) : (
+                "Sign In"
+              )}
             </Button>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Link href="#" variant="body2">Forgot Password?</Link>
-              <Link href="#" variant="body2">Create Account</Link>
+              <Link
+                href="#"
+                variant="body2"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp ? "Already have an account? Login" : "Create Account"}
+              </Link>
             </Box>
           </Box>
         </Box>
       </Paper>
+
+      {/* ✅ Success Modal */}
+      <Dialog open={successModal} onClose={() => setSuccessModal(false)}>
+        <DialogTitle>🎉 Account Created Successfully</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Your candidate account has been created. Please log in to continue.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setSuccessModal(false)}
+            variant="contained"
+            color="primary"
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

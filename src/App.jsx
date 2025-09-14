@@ -7,6 +7,8 @@ import AdminHome from "./DashBoards/AdminDashBoard/AdminHome";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EmployeeProtectedRoute from "./components/EmployeeProtectedRoute";
 import EmployeeHome from "./DashBoards/EmployeeDashBoard/EmployeeHome";
+import CandidateHome from "./DashBoards/CandidateDashBoard/CandidateHome";
+import CandidateProtectedRoute from "./components/CandidateProtectedRoute";
 
 function App() {
   return (
@@ -33,6 +35,14 @@ function App() {
           }
         />
         <Route path="/candidate" element={<CandidateLogin />} />
+        <Route
+          path="/candidate-dashboard/:uid"
+          element={
+            <CandidateProtectedRoute>
+              <CandidateHome />
+            </CandidateProtectedRoute>
+          }
+        />
 
         <Route path="/admin-dashboard" element={<AdminHome />} />
       </Routes>
