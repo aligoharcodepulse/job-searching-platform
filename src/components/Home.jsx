@@ -37,10 +37,10 @@ export default function Home() {
                 variant="contained"
                 color="success"
                 sx={{ mx: 1, borderRadius: 1 }}
-                onClick={() => navigate("/employee")}
+                onClick={() => navigate("/employer")}
               >
                 <BadgeIcon sx={{ mr: 1 }} />
-                Employee Login
+                Employer Login
               </Button>
               <Button
                 variant="contained"

@@ -22,7 +22,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-export default function EmployeeLogin() {
+export default function EmployerLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -46,7 +46,7 @@ export default function EmployeeLogin() {
         );
 
         // ✅ Store employee profile in Firestore
-        await setDoc(doc(db, "employees", userCred.user.uid), {
+        await setDoc(doc(db, "employer", userCred.user.uid), {
           email,
           createdAt: new Date(),
         });
@@ -57,12 +57,12 @@ export default function EmployeeLogin() {
         // ✅ Sign In
         const userCred = await signInWithEmailAndPassword(auth, email, password);
 
-        const profileRef = doc(db, "employees", userCred.user.uid);
+        const profileRef = doc(db, "employer", userCred.user.uid);
         const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists()) {
-          localStorage.setItem("employeeAuth", userCred.user.uid);
-          navigate(`/employee-dashboard/${userCred.user.uid}`);
+          localStorage.setItem("employerAuth", userCred.user.uid);
+          navigate(`/employer-dashboard/${userCred.user.uid}`);
         } else {
           setError("No profile found ❌");
         }
@@ -96,7 +96,7 @@ export default function EmployeeLogin() {
             <WorkIcon />
           </Avatar>
           <Typography component="h1" variant="h5" fontWeight="bold">
-            {isSignUp ? "Create Employee Account" : "Employee Login"}
+            {isSignUp ? "Create Employer Account" : "Employer Login"}
           </Typography>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
             <TextField
@@ -159,7 +159,7 @@ export default function EmployeeLogin() {
         <DialogTitle>🎉 Account Created Successfully</DialogTitle>
         <DialogContent>
           <Typography>
-            Your employee account has been created. Please log in to continue.
+            Your employer account has been created. Please log in to continue.
           </Typography>
         </DialogContent>
         <DialogActions>

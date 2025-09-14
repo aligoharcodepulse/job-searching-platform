@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./components/Home";
 import AdminLogin from "./components/AdminLogin";
-import EmployeeLogin from "./components/EmployeeLogin";
+import EmployerLogin from "./components/EmployerLogin";
 import CandidateLogin from "./components/CandidateLogin";
 import AdminHome from "./DashBoards/AdminDashBoard/AdminHome";
 import ProtectedRoute from "./components/ProtectedRoute";
-import EmployeeProtectedRoute from "./components/EmployeeProtectedRoute";
-import EmployeeHome from "./DashBoards/EmployeeDashBoard/EmployeeHome";
+import EmployerProtectedRoute from "./components/EmployerProtectedRoute";
+import EmployerHome from "./DashBoards/EmployerDashBoard/EmployerHome";
 import CandidateHome from "./DashBoards/CandidateDashBoard/CandidateHome";
 import CandidateProtectedRoute from "./components/CandidateProtectedRoute";
 
@@ -25,13 +25,13 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/employee" element={<EmployeeLogin />} />
+        <Route path="/employer" element={<EmployerLogin />} />
         <Route
-          path="/employee-dashboard/:uid"
+          path="/employer-dashboard/:uid"
           element={
-            <EmployeeProtectedRoute>
-              <EmployeeHome />
-            </EmployeeProtectedRoute>
+            <EmployerProtectedRoute>
+              <EmployerHome />
+            </EmployerProtectedRoute>
           }
         />
         <Route path="/candidate" element={<CandidateLogin />} />
