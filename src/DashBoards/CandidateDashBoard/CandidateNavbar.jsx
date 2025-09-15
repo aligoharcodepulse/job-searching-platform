@@ -3,34 +3,34 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 export default function EmployerNavbar() {
   const navigate = useNavigate();
-  const { uid } = useParams(); // ✅ get employer id from URL
+  const { uid } = useParams();
 
   const handleLogout = () => {
-    localStorage.removeItem("employerAuth");
-    navigate("/employer"); // ✅ go back to employer login
+    localStorage.removeItem("candidateAuth");
+    navigate("/candidate"); 
   };
 
   return (
-    <AppBar position="static" sx={{ bgcolor: "success.main" }}>
+    <AppBar position="static" sx={{ bgcolor: "secondary.main" }}>
       <Toolbar>
         <Typography
           variant="h6"
           sx={{ flexGrow: 1, cursor: "pointer" }}
-          onClick={() => navigate(`/employer-dashboard/${uid}`)} // ✅ stay in employer dashboard
+          onClick={() => navigate(`/candidate-dashboard/${uid}`)}
         >
-          JobSphere Employer
+          JobSphere Candidate
         </Typography>
         <Box>
-          <Button color="inherit" component={Link} to={`/employer-dashboard/${uid}`}>
+          <Button color="inherit" component={Link} to={`/candidate-dashboard/${uid}`}>
             Home
           </Button>
-          <Button color="inherit" component={Link} to={`/employer-dashboard/${uid}/about`}>
+          <Button color="inherit" component={Link} to={`/candidate-dashboard/${uid}/about`}>
             About
           </Button>
-          <Button color="inherit" component={Link} to={`/employer-dashboard/${uid}/contact`}>
+          <Button color="inherit" component={Link} to={`/candidate-dashboard/${uid}/contact`}>
             Contact
           </Button>
-          <Button color="inherit" component={Link} to={`/employer-dashboard/${uid}/support`}>
+          <Button color="inherit" component={Link} to={`/candidate-dashboard/${uid}/support`}>
             Support
           </Button>
           <Button color="inherit" onClick={handleLogout}>

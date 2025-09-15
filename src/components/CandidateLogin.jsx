@@ -81,7 +81,7 @@ export default function CandidateLogin() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #e3f2fd, #bbdefb)",
+        background: "linear-gradient(135deg, #f3e5f5, #e1bee7)",
         p: 2,
       }}
     >
@@ -92,7 +92,7 @@ export default function CandidateLogin() {
         <Box
           sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
         >
-          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
             <PersonIcon />
           </Avatar>
           <Typography component="h1" variant="h5" fontWeight="bold">
@@ -131,7 +131,7 @@ export default function CandidateLogin() {
               fullWidth
               variant="contained"
               disabled={loading}
-              sx={{ mt: 3, mb: 2, bgcolor: "primary.main" }}
+              sx={{ mt: 3, mb: 2, bgcolor: "secondary.main" }}
             >
               {loading ? (
                 <CircularProgress size={24} sx={{ color: "white" }} />

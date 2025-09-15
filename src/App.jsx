@@ -12,7 +12,10 @@ import CandidateProtectedRoute from "./components/CandidateProtectedRoute";
 import EmployerNavbar from "./DashBoards/EmployerDashBoard/EmployerNavbar";
 import About from "./components/About";
 import Contact from "./components/Contact";
-import EmployerSupport from "./DashBoards/EmployerDashBoard/EmployerSupport"
+import Support from "./components/Support"
+import AdminNavbar from "./DashBoards/AdminDashBoard/AdminNavbar";
+import Messages from "./DashBoards/AdminDashBoard/Messages";
+import CandidateNavbar from "./DashBoards/CandidateDashBoard/CandidateNavbar"
 
 function App() {
   return (
@@ -25,10 +28,16 @@ function App() {
           path="/admin-dashboard"
           element={
             <ProtectedRoute>
-              <AdminHome />
+              <>
+                <AdminNavbar />
+                <Outlet />
+              </>
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminHome />} />
+          <Route path="messages" element={<Messages />} />
+        </Route>
 
 
 
@@ -47,13 +56,8 @@ function App() {
           <Route index element={<EmployerHome />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
-          <Route path="employer-support" element={<EmployerSupport />} />
+          <Route path="support" element={<Support />} />
         </Route>
-
-
-
-
-
 
 
         <Route path="/candidate" element={<CandidateLogin />} />
@@ -61,12 +65,18 @@ function App() {
           path="/candidate-dashboard/:uid"
           element={
             <CandidateProtectedRoute>
-              <CandidateHome />
+              <>
+                <CandidateNavbar />
+                <Outlet />
+              </>
             </CandidateProtectedRoute>
           }
-        />
-
-        <Route path="/admin-dashboard" element={<AdminHome />} />
+        >
+          <Route index element={<CandidateHome />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="support" element={<Support />} />
+        </Route>
       </Routes>
     </Router>
   );
