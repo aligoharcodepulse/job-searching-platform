@@ -1,9 +1,10 @@
 import { AppBar, Toolbar, Typography, Button, Box, Container, Grid } from "@mui/material";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import { useNavigate } from "react-router-dom";
-import BadgeIcon from '@mui/icons-material/Badge';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import WorkIcon from "@mui/icons-material/Work";
+import SecurityIcon from "@mui/icons-material/Security";
 import PersonIcon from '@mui/icons-material/Person';
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function Home() {
                 sx={{ mx: 1, borderRadius: 1 }}
                 onClick={() => navigate("/admin")}
               >
-                <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+                <SecurityIcon sx={{ mr: 1 }} />
                 Admin Login
               </Button>
               <Button
@@ -39,7 +40,7 @@ export default function Home() {
                 sx={{ mx: 1, borderRadius: 1 }}
                 onClick={() => navigate("/employer")}
               >
-                <BadgeIcon sx={{ mr: 1 }} />
+                <WorkIcon sx={{ mr: 1 }} />
                 Employer Login
               </Button>
               <Button
