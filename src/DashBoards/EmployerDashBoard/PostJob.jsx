@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   TextField,
   Button,
@@ -12,16 +12,34 @@ import {
   Alert,
 } from "@mui/material";
 
-export default function PostJob({ onSubmit }) {
+export default function PostJob({ onSubmit, initialData }) {
   const [job, setJob] = useState({
     title: "",
     description: "",
     salary: "",
     location: "",
-    type: "onsite", // default job type
+    type: "onsite",
   });
+
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, type: "success", msg: "" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    type: "success",
+    msg: "",
+  });
+
+  // ✅ Load existing data if editing
+  useEffect(() => {
+    if (initialData) {
+      setJob({
+        title: initialData.title || "",
+        description: initialData.description || "",
+        salary: initialData.salary || "",
+        location: initialData.location || "",
+        type: initialData.type || "onsite",
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (e) =>
     setJob({ ...job, [e.target.name]: e.target.value });
@@ -30,11 +48,17 @@ export default function PostJob({ onSubmit }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(job); // calling parent function
-      setSnackbar({ open: true, type: "success", msg: "Job posted successfully!" });
-      setJob({ title: "", description: "", salary: "", location: "", type: "onsite" }); // reset form
+      await onSubmit(job);
+      setSnackbar({
+        open: true,
+        type: "success",
+        msg: initialData ? "Job updated successfully!" : "Job posted successfully!",
+      });
+      if (!initialData) {
+        setJob({ title: "", description: "", salary: "", location: "", type: "onsite" });
+      }
     } catch (err) {
-      setSnackbar({ open: true, type: "error", msg: err });
+      setSnackbar({ open: true, type: "error", msg: err.message });
     } finally {
       setLoading(false);
     }
@@ -97,11 +121,11 @@ export default function PostJob({ onSubmit }) {
       <Button
         type="submit"
         variant="contained"
-        color="primary"
+        color="success"
         sx={{ mt: 2 }}
         disabled={loading}
       >
-        {loading ? <CircularProgress size={24} color="inherit" /> : "Post Job"}
+        {loading ? <CircularProgress size={24} color="inherit" /> : initialData ? "Update Job" : "Post Job"}
       </Button>
 
       {/* ✅ Snackbar Notification */}

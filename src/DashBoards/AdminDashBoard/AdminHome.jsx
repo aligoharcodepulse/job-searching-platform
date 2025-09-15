@@ -1,37 +1,50 @@
 import { useEffect, useState } from "react";
 import { db } from "../../../firebase/firebaseConfig";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+} from "firebase/firestore";
 import {
   Box,
   Button,
   Typography,
-  Paper,
+  Card,
+  CardContent,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from "@mui/material";
 
 export default function AdminHome() {
-  const [requests, setRequests] = useState([]);
+  const [employers, setEmployers] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [openJobsDialog, setOpenJobsDialog] = useState(false);
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      const snap = await getDocs(collection(db, "verificationRequests"));
-      setRequests(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    };
-    fetchRequests();
-  }, []);
-
-  const handleAction = async (id, action) => {
-    setLoadingId(id);
-    try {
-      await updateDoc(doc(db, "verificationRequests", id), {
-        status: action,
-      });
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.id === id ? { ...r, status: action } : r
+    const fetchEmployers = async () => {
+      const snap = await getDocs(
+        query(
+          collection(db, "verificationRequests"),
+          where("status", "==", "approved")
         )
       );
+      setEmployers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    };
+    fetchEmployers();
+  }, []);
+
+  const handleBlock = async (id) => {
+    setLoadingId(id);
+    try {
+      await updateDoc(doc(db, "verificationRequests", id), { status: "blocked" });
+      setEmployers((prev) => prev.filter((emp) => emp.id !== id));
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,38 +52,106 @@ export default function AdminHome() {
     }
   };
 
+  const handleViewJobs = async (employerId) => {
+    try {
+      const snap = await getDocs(
+        query(collection(db, "jobs"), where("employerId", "==", employerId))
+      );
+      setJobs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setOpenJobsDialog(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    try {
+      await deleteDoc(doc(db, "jobs", jobId));
+      setJobs((prev) => prev.filter((j) => j.id !== jobId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h4">Admin Dashboard</Typography>
+      <Typography variant="h4" gutterBottom>
+        Verified Employers
+      </Typography>
 
-      {requests.map((req) => (
-        <Paper key={req.id} sx={{ p: 2, my: 2 }}>
-          <Typography fontWeight="bold">{req.name}</Typography>
-          <Typography>{req.email}</Typography>
-          <Typography>Status: {req.status}</Typography>
+      {employers.map((emp) => (
+        <Card key={emp.id} sx={{ mb: 2, p: 2 }}>
+          <CardContent>
+            <Typography variant="h6">{emp.name}</Typography>
+            <Typography>{emp.email}</Typography>
 
-          {req.status === "pending" && (
-            <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => handleAction(req.id, "approved")}
-                disabled={loadingId === req.id}
-              >
-                {loadingId === req.id ? <CircularProgress size={20} sx={{ color: "white" }} /> : "Approve"}
-              </Button>
+            <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
               <Button
                 variant="contained"
                 color="error"
-                onClick={() => handleAction(req.id, "rejected")}
-                disabled={loadingId === req.id}
+                onClick={() => handleBlock(emp.id)}
+                disabled={loadingId === emp.id}
               >
-                {loadingId === req.id ? <CircularProgress size={20} sx={{ color: "white" }} /> : "Reject"}
+                {loadingId === emp.id ? (
+                  <CircularProgress size={20} sx={{ color: "white" }} />
+                ) : (
+                  "Block"
+                )}
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => handleViewJobs(emp.id)}
+              >
+                Posted Jobs
               </Button>
             </Box>
-          )}
-        </Paper>
+          </CardContent>
+        </Card>
       ))}
+
+      {/* ✅ Jobs Dialog */}
+      <Dialog
+        open={openJobsDialog}
+        onClose={() => setOpenJobsDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Jobs Posted</DialogTitle>
+        <DialogContent>
+          {jobs.length > 0 ? (
+            jobs.map((job) => (
+              <Box
+                key={job.id}
+                sx={{
+                  border: "1px solid #ccc",
+                  borderRadius: 2,
+                  p: 2,
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">{job.title}</Typography>
+                <Typography>📍 Location: {job.location}</Typography>
+                <Typography>💰 Salary: {job.salary}</Typography>
+                <Typography>🛠️ Type: {job.type}</Typography>
+                <Typography sx={{ mt: 1 }}>{job.description}</Typography>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  sx={{ mt: 1 }}
+                  onClick={() => handleDeleteJob(job.id)}
+                >
+                  Delete Job
+                </Button>
+              </Box>
+            ))
+          ) : (
+            <Typography>No jobs posted yet.</Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

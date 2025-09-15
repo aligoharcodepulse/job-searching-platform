@@ -22,6 +22,9 @@ export default function AdminNavbar() {
           <Button color="inherit" component={Link} to={`/admin-dashboard`}>
             Home
           </Button>
+          <Button color="inherit" component={Link} to={`/admin-dashboard/requests`}>
+            Employer Verification
+          </Button>
           <Button color="inherit" component={Link} to={`/admin-dashboard/messages`}>
             Messgaes Recieved
           </Button>

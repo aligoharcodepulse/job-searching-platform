@@ -16,6 +16,7 @@ import Support from "./components/Support"
 import AdminNavbar from "./DashBoards/AdminDashBoard/AdminNavbar";
 import Messages from "./DashBoards/AdminDashBoard/Messages";
 import CandidateNavbar from "./DashBoards/CandidateDashBoard/CandidateNavbar"
+import EmployerVerificationRequests from "./DashBoards/AdminDashBoard/EmployerVerificationRequests";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           }
         >
           <Route index element={<AdminHome />} />
+          <Route path="requests" element={<EmployerVerificationRequests />} />
           <Route path="messages" element={<Messages />} />
         </Route>
 
