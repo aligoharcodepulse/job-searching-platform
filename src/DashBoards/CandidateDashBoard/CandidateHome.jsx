@@ -9,6 +9,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   Box,
   Typography,
@@ -25,6 +26,7 @@ import {
 } from "@mui/material";
 
 export default function CandidateHome() {
+  const [candidateId, setCandidateId] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,15 +35,31 @@ export default function CandidateHome() {
   const [formData, setFormData] = useState({ name: "", skills: "", experience: "" });
 
   // Application states
-  const [applications, setApplications] = useState({}); // jobId -> status
+  const [applications, setApplications] = useState({});
   const [openModal, setOpenModal] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
   const [applying, setApplying] = useState(false);
   const [editProfile, setEditProfile] = useState(false);
 
+  // Get candidateId from Firebase Auth
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCandidateId(user.uid);
+      } else {
+        setCandidateId(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Load jobs, profile, and applications
   useEffect(() => {
+    if (!candidateId) return;
+
     const fetchJobs = async () => {
       const snapshot = await getDocs(collection(db, "jobs"));
       const jobsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -50,10 +68,23 @@ export default function CandidateHome() {
     };
 
     const fetchProfile = async () => {
-      const profileRef = doc(db, "candidates", "candidate1"); // replace with UID
+      const profileRef = doc(db, "candidates", candidateId);
       const profileSnap = await getDoc(profileRef);
+
       if (profileSnap.exists()) {
-        setProfile(profileSnap.data());
+        const data = profileSnap.data();
+
+        // ✅ Check if data has actual values
+        if (data.name || data.skills || data.experience) {
+          setProfile(data);
+          setFormData(data);
+        } else {
+          setProfile(null);
+          setFormData({ name: "", skills: "", experience: "" });
+        }
+      } else {
+        setProfile(null); // no profile → first-time login
+        setFormData({ name: "", skills: "", experience: "" }); // clear form
       }
     };
 
@@ -63,7 +94,7 @@ export default function CandidateHome() {
       const apps = {};
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data.candidateId === "candidate1") {
+        if (data.candidateId === candidateId) {
           apps[data.jobId] = data.status;
         }
       });
@@ -73,7 +104,7 @@ export default function CandidateHome() {
     fetchJobs();
     fetchProfile();
     fetchApplications();
-  }, []);
+  }, [candidateId]);
 
   // Handle form changes
   const handleChange = (e) =>
@@ -82,14 +113,14 @@ export default function CandidateHome() {
   // Save or update profile
   const handleSaveProfile = async () => {
     setLoading(true);
-    const profileRef = doc(db, "candidates", "candidate1");
+    const profileRef = doc(db, "candidates", candidateId);
     try {
       if (profile) {
         await updateDoc(profileRef, formData);
         setProfile({ ...profile, ...formData });
       } else {
         await setDoc(profileRef, formData);
-        setProfile(formData);
+        setProfile(formData); // ✅ set profile after first save
       }
       setEditProfile(false);
     } catch (err) {
@@ -125,10 +156,10 @@ export default function CandidateHome() {
     setApplying(true);
 
     try {
-      const appRef = doc(db, "applications", `${selectedJob.id}_candidate1`);
+      const appRef = doc(db, "applications", `${selectedJob.id}_${candidateId}`);
       await setDoc(appRef, {
         jobId: selectedJob.id,
-        candidateId: "candidate1",
+        candidateId,
         profile,
         coverLetter,
         status: "Applied",
@@ -152,8 +183,17 @@ export default function CandidateHome() {
       Shortlisted: { color: "success", text: "Shortlisted ✅" },
       Rejected: { color: "error", text: "Rejected ❌" },
     };
-    return config[status] || { color: "primary", text: "Apply Now" };
+    return config[status] || { color: "secondary", text: "Apply Now" };
   };
+
+  // If user not logged in
+  if (!candidateId) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <Typography variant="h6">Please log in to access your dashboard.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f9f9f9", pb: 4 }}>
@@ -205,17 +245,30 @@ export default function CandidateHome() {
 
       <Container>
         {/* Profile Section */}
-        {!profile || editProfile ? (
+        {!profile ? (
+          // Create profile (first time)
           <Paper sx={{ p: 3, mb: 4 }}>
-            <Typography variant="h5">{profile ? "Update Your Profile" : "Create Your Profile"}</Typography>
+            <Typography variant="h5">Create Your Profile</Typography>
             <TextField fullWidth margin="normal" label="Full Name" name="name" value={formData.name} onChange={handleChange} />
             <TextField fullWidth margin="normal" label="Skills" name="skills" value={formData.skills} onChange={handleChange} />
             <TextField fullWidth margin="normal" label="Experience" name="experience" value={formData.experience} onChange={handleChange} />
-            <Button variant="contained" color="primary" onClick={handleSaveProfile} disabled={loading} sx={{ mt: 2 }}>
+            <Button variant="contained" color="secondary" onClick={handleSaveProfile} disabled={loading} sx={{ mt: 2 }}>
               {loading ? <CircularProgress size={24} /> : "Save Profile"}
             </Button>
           </Paper>
+        ) : editProfile ? (
+          // Update profile (only after clicking update)
+          <Paper sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h5">Update Your Profile</Typography>
+            <TextField fullWidth margin="normal" label="Full Name" name="name" value={formData.name} onChange={handleChange} />
+            <TextField fullWidth margin="normal" label="Skills" name="skills" value={formData.skills} onChange={handleChange} />
+            <TextField fullWidth margin="normal" label="Experience" name="experience" value={formData.experience} onChange={handleChange} />
+            <Button variant="contained" color="secondary" onClick={handleSaveProfile} disabled={loading} sx={{ mt: 2 }}>
+              {loading ? <CircularProgress size={24} /> : "Update Profile"}
+            </Button>
+          </Paper>
         ) : (
+          // Profile summary (default after profile created)
           <Paper sx={{ p: 3, mb: 4, textAlign: "center" }}>
             <Typography variant="h6">Welcome, {profile.name}! 🎉</Typography>
             <Typography>Skills: {profile.skills}</Typography>
@@ -302,7 +355,7 @@ export default function CandidateHome() {
         <DialogActions>
           <Button onClick={() => setOpenModal(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmitApplication} disabled={applying}>
-            {applying ? <CircularProgress size={24} color="inherit" /> : "Submit Application"}
+            {applying ? <CircularProgress size={24} color="secondary" /> : "Submit Application"}
           </Button>
         </DialogActions>
       </Dialog>
