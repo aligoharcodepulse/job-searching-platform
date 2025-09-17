@@ -19,6 +19,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Grid,
 } from "@mui/material";
 
 export default function AdminHome() {
@@ -43,7 +44,17 @@ export default function AdminHome() {
   const handleBlock = async (id) => {
     setLoadingId(id);
     try {
+      // Block employer
       await updateDoc(doc(db, "verificationRequests", id), { status: "blocked" });
+
+      // Delete all jobs posted by this employer
+      const snap = await getDocs(
+        query(collection(db, "jobs"), where("employerId", "==", id))
+      );
+      const deletePromises = snap.docs.map((d) => deleteDoc(doc(db, "jobs", d.id)));
+      await Promise.all(deletePromises);
+
+      // Remove from state
       setEmployers((prev) => prev.filter((emp) => emp.id !== id));
     } catch (err) {
       console.error(err);
@@ -79,37 +90,42 @@ export default function AdminHome() {
         Verified Employers
       </Typography>
 
-      {employers.map((emp) => (
-        <Card key={emp.id} sx={{ mb: 2, p: 2 }}>
-          <CardContent>
-            <Typography variant="h6">{emp.name}</Typography>
-            <Typography>{emp.email}</Typography>
+      {/* Grid layout for employer cards */}
+      <Grid container spacing={4}>
+        {employers.map((emp) => (
+          <Grid item xs={12} sm={6} md={4} key={emp.id}>
+            <Card sx={{ p: 2, height: "100%" }}>
+              <CardContent>
+                <Typography variant="h6">{emp.name}</Typography>
+                <Typography>{emp.email}</Typography>
 
-            <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => handleBlock(emp.id)}
-                disabled={loadingId === emp.id}
-              >
-                {loadingId === emp.id ? (
-                  <CircularProgress size={20} sx={{ color: "white" }} />
-                ) : (
-                  "Block"
-                )}
-              </Button>
+                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleBlock(emp.id)}
+                    disabled={loadingId === emp.id}
+                  >
+                    {loadingId === emp.id ? (
+                      <CircularProgress size={20} sx={{ color: "white" }} />
+                    ) : (
+                      "Block"
+                    )}
+                  </Button>
 
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => handleViewJobs(emp.id)}
-              >
-                Posted Jobs
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      ))}
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => handleViewJobs(emp.id)}
+                  >
+                    Posted Jobs
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       {/* ✅ Jobs Dialog */}
       <Dialog
