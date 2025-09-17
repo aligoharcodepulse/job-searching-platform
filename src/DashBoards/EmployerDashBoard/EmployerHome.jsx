@@ -9,6 +9,7 @@ import {
   where,
   deleteDoc,
   updateDoc,
+  getDocs,
 } from "firebase/firestore";
 import {
   Box,
@@ -17,38 +18,56 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
 import EmployerVerification from "./EmployerVerification";
 import PostJob from "./PostJob";
 
 export default function EmployerHome() {
   const employerId = localStorage.getItem("employerAuth");
-  const [status, setStatus] = useState(null); // null until fetched
+  const [status, setStatus] = useState(null);
   const [showVerification, setShowVerification] = useState(false);
   const [showPostJob, setShowPostJob] = useState(false);
-
-  // 🔹 New state for editing jobs
   const [showEditJob, setShowEditJob] = useState(false);
   const [currentJob, setCurrentJob] = useState(null);
 
   const [jobs, setJobs] = useState([]);
+  const [applicantCounts, setApplicantCounts] = useState({});
+  const [openApplicants, setOpenApplicants] = useState(false);
+  const [selectedJobApplicants, setSelectedJobApplicants] = useState(null);
+
+  const [loadingStatus, setLoadingStatus] = useState(null); // ✅ Track which applicant is loading
 
   useEffect(() => {
     if (!employerId) return;
 
-    // Watch verification status
+    // Employer verification
     const unsub = onSnapshot(doc(db, "verificationRequests", employerId), (snap) => {
       if (snap.exists()) {
         setStatus(snap.data().status);
       } else {
-        setStatus(null); // no request submitted
+        setStatus(null);
       }
     });
 
-    // Watch posted jobs
+    // Employer's jobs (real-time)
     const q = query(collection(db, "jobs"), where("employerId", "==", employerId));
     const unsubJobs = onSnapshot(q, (snap) => {
-      setJobs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const jobsData = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setJobs(jobsData);
+
+      // ✅ Track real-time applicant counts for each job
+      jobsData.forEach((job) => {
+        const appsQuery = query(collection(db, "applications"), where("jobId", "==", job.id));
+        onSnapshot(appsQuery, (appSnap) => {
+          setApplicantCounts((prev) => ({
+            ...prev,
+            [job.id]: appSnap.size,
+          }));
+        });
+      });
     });
 
     return () => {
@@ -62,7 +81,6 @@ export default function EmployerHome() {
     await addDoc(collection(db, "jobs"), {
       ...jobData,
       employerId,
-      applicants: [],
       createdAt: new Date(),
     });
     setShowPostJob(false);
@@ -87,6 +105,37 @@ export default function EmployerHome() {
     setCurrentJob(null);
   };
 
+  // ✅ Open applicants modal (fetch from applications collection)
+  const handleViewApplicants = async (job) => {
+    const q = query(collection(db, "applications"), where("jobId", "==", job.id));
+    const snapshot = await getDocs(q);
+
+    const applicants = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    }));
+
+    setSelectedJobApplicants({ ...job, applicants });
+    setOpenApplicants(true);
+  };
+
+  // ✅ Change applicant status (with loader)
+  const handleStatusChange = async (applicationId, newStatus) => {
+    setLoadingStatus(applicationId); // ✅ show loader for this applicant
+    const appRef = doc(db, "applications", applicationId);
+    await updateDoc(appRef, { status: newStatus });
+
+    // update local state
+    setSelectedJobApplicants((prev) => ({
+      ...prev,
+      applicants: prev.applicants.map((app) =>
+        app.id === applicationId ? { ...app, status: newStatus } : app
+      ),
+    }));
+
+    setLoadingStatus(null); // ✅ stop loader
+  };
+
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h4">Employer Dashboard</Typography>
@@ -106,12 +155,7 @@ export default function EmployerHome() {
           ❌ Your verification was rejected. You cannot post jobs.
         </Typography>
       ) : status === "pending" ? (
-        <Button
-          variant="contained"
-          color="warning"
-          sx={{ my: 2 }}
-          disabled
-        >
+        <Button variant="contained" color="warning" sx={{ my: 2 }} disabled>
           Submitted ✅ (Pending Review)
         </Button>
       ) : (
@@ -149,10 +193,7 @@ export default function EmployerHome() {
         <DialogTitle>Edit Job</DialogTitle>
         <DialogContent>
           {currentJob && (
-            <PostJob
-              onSubmit={handleUpdateJob}
-              initialData={currentJob} // pass current job for pre-filled form
-            />
+            <PostJob onSubmit={handleUpdateJob} initialData={currentJob} />
           )}
         </DialogContent>
       </Dialog>
@@ -194,6 +235,13 @@ export default function EmployerHome() {
                 >
                   Delete
                 </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => handleViewApplicants(job)}
+                >
+                  Applicants Applied ({applicantCounts[job.id] || 0})
+                </Button>
               </Box>
             </Box>
           ))
@@ -201,6 +249,76 @@ export default function EmployerHome() {
           <Typography>No jobs posted yet.</Typography>
         )}
       </Box>
+
+      {/* ✅ Applicants Modal */}
+      <Dialog
+        open={openApplicants}
+        onClose={() => setOpenApplicants(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Applicants</DialogTitle>
+        <DialogContent>
+          {selectedJobApplicants?.applicants?.length > 0 ? (
+            selectedJobApplicants.applicants.map((app) => (
+              <Paper
+                key={app.id}
+                sx={{ p: 2, mb: 2, border: "1px solid #ddd", borderRadius: 2 }}
+              >
+                <Typography variant="h6">{app.profile?.name}</Typography>
+                <Typography>Skills: {app.profile?.skills}</Typography>
+                <Typography>Experience: {app.profile?.experience}</Typography>
+                <Typography>Cover Letter: {app.coverLetter}</Typography>
+                <Typography>Status: {app.status}</Typography>
+
+                <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    color="info"
+                    onClick={() => handleStatusChange(app.id, "Reviewed")}
+                    disabled={loadingStatus === app.id}
+                  >
+                    {loadingStatus === app.id ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      "Reviewed"
+                    )}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    onClick={() => handleStatusChange(app.id, "Shortlisted")}
+                    disabled={loadingStatus === app.id}
+                  >
+                    {loadingStatus === app.id ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      "Shortlist"
+                    )}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleStatusChange(app.id, "Rejected")}
+                    disabled={loadingStatus === app.id}
+                  >
+                    {loadingStatus === app.id ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      "Reject"
+                    )}
+                  </Button>
+                </Box>
+              </Paper>
+            ))
+          ) : (
+            <Typography>No applicants yet.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenApplicants(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
