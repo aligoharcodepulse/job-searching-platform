@@ -19,20 +19,21 @@ export default function Support() {
        textAlign="center"
        mb={5}
        >
-        We're here to help you get the most out of Jobyeefy.  
+        We're here to help you get the most out of JobSphere.  
         Explore our frequently asked questions or reach out if you need more assistance.
       </Typography>
       <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography fontWeight="bold">
-            How do I create a profile?
+            How do I create a profile? (Candidate/JobSeeker)
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography color="text.secondary">
-            Register using your email or Google account. Once logged in, go to your dashboard and click “Build Profile” to upload your resume, add
-            skills, education, and work experience.
+            Register using your email and password. Once logged in and directed to your dashboard 
+            then click “Create Profile” to add your name,
+            skills, and work experience.
           </Typography>
         </AccordionDetails>
       </Accordion>
@@ -40,12 +41,14 @@ export default function Support() {
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography fontWeight="bold">
-            How can I post a job?
+            How can I post a job? (Employer)
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography color="text.secondary">
-            First, apply for verification as a job poster. After approval, you can create and publish job listings directly from your dashboard. Every posting is visible instantly to candidates.
+            First, apply for verification as a job poster. After approval, you can create 
+            and publish job listings directly from your dashboard. Every posting is visible 
+            instantly to candidates.
           </Typography>
         </AccordionDetails>
       </Accordion>
@@ -53,12 +56,13 @@ export default function Support() {
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography fontWeight="bold">
-            How do I track my applications?
+            How do I track my applications? (Candidate/JobSeeker)
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography color="text.secondary">
-            Go to “My Applications” in your dashboard to see job status. You can see live updates for each application, including whether it's been Reviewed, Shortlisted, or Rejected.
+            Go to “Home” in your dashboard to see job status. You can see live updates for 
+            each application, including whether it's been Reviewed, Shortlisted, or Rejected.
           </Typography>
         </AccordionDetails>
       </Accordion>
@@ -72,13 +76,14 @@ export default function Support() {
           <AccordionDetails>
             <Typography color="text.secondary">
               If you need help beyond these FAQs, you can reach us at{" "}
-              <strong>support@jobyeefy.com</strong>. Our team is ready to assist you.
+              <strong>support@jobsphere.com</strong> or fill the contact form inside the contact section.
+               Our team is ready to assist you.
             </Typography>
           </AccordionDetails>
         </Accordion>
       </Paper>
 
-      <Typography
+      {/* <Typography
         variant="body1"
         textAlign="center"
         color="text.secondary"
@@ -86,7 +91,7 @@ export default function Support() {
       >
         💡 Tip: Keep your profile updated to increase your chances of getting
         shortlisted by verified employers!
-      </Typography>
+      </Typography> */}
     </Box>
   );
 }

@@ -9,7 +9,7 @@ export default function About() {
       gutterBottom 
       textAlign="center"
       >
-      About Jobyeefy
+      About JobSphere
       </Typography>
 
       <Typography 
@@ -36,7 +36,11 @@ export default function About() {
               🎯 Our Mission
             </Typography>
             <Typography color="text.secondary" mt={2}>
-              Our mission is to revolutionize the hiring process by connecting job seekers with verified opportunities, enabling one-click applications, and providing live status tracking while empowering employers with a simple, transparent, and trustworthy way to manage candidates. We aim to make job hunting and recruitment seamless, authentic, and stress-free for everyone.
+              Our mission is to revolutionize the hiring process by connecting job seekers
+              with verified opportunities, enabling one-click applications, and providing 
+              live status tracking while empowering employers with a simple, transparent, 
+              and trustworthy way to manage candidates. We aim to make job hunting and 
+              recruitment seamless, authentic, and stress-free for everyone.
             </Typography>
           </Paper>
         </Grid>
@@ -55,7 +59,12 @@ export default function About() {
               👥 Our Team
             </Typography>
             <Typography color="text.secondary" mt={2}>
-              A group of passionate developers — Muhammad Ali, Shumaaila Riaz, Faizan Javed Ghumman, Waariha Asim, and Mehak Iqbhal came together to build Jobyeefy. It is the result of our shared vision to create a smarter and safer job search experience. By combining creativity with technology, we designed a platform that connects job seekers with verified employers while promoting trust, transparency, and efficiency in the hiring process.
+              A group of passionate developers — Muhammad Ali, Shumaila Riaz, Faizan Javed Ghumman,
+              Waariha Asim, and Mehak Iqbhal came together to build JobSphere. It is the result of 
+              our shared vision to create a smarter and safer job search experience. By combining 
+              creativity with technology, we designed a platform that connects job seekers with 
+              verified employers while promoting trust, transparency, and efficiency in the hiring 
+              process.
             </Typography>
           </Paper>
         </Grid>
@@ -74,7 +83,13 @@ export default function About() {
               🔒 Trust & Safety
             </Typography>
             <Typography color="text.secondary" mt={2}>
-              At Jobyeefy, trust and safety are at the heart of our platform. Only verified job posters are allowed to publish jobs, and every listing goes through a verification process to ensure authenticity. This approach minimizes fake postings, prevents scams, and protects candidates from misleading opportunities. By maintaining a network of trustworthy employers, we create a reliable and transparent environment where job seekers can confidently apply, knowing the opportunities they see are genuine and secure.
+              At JobSphere, trust and safety are at the heart of our platform. Only verified job 
+              posters are allowed to publish jobs, and every listing goes through a verification 
+              process to ensure authenticity. This approach minimizes fake postings, prevents scams,
+              and protects candidates from misleading opportunities. By maintaining a network of 
+              trustworthy employers, we create a reliable and transparent environment where job 
+              seekers can confidently apply, knowing the opportunities they see are genuine and 
+              secure.
             </Typography>
           </Paper>
         </Grid>
