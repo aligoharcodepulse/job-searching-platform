@@ -20,7 +20,9 @@ import {
   DialogTitle,
   DialogContent,
   Grid,
+  Divider,
 } from "@mui/material";
+import AdminAnalytics from "./AdminAnalytics";
 
 export default function AdminHome() {
   const [employers, setEmployers] = useState([]);
@@ -44,7 +46,6 @@ export default function AdminHome() {
   const handleBlock = async (id) => {
     setLoadingId(id);
     try {
-      // Block employer
       await updateDoc(doc(db, "verificationRequests", id), { status: "blocked" });
 
       // Delete all jobs posted by this employer
@@ -54,7 +55,6 @@ export default function AdminHome() {
       const deletePromises = snap.docs.map((d) => deleteDoc(doc(db, "jobs", d.id)));
       await Promise.all(deletePromises);
 
-      // Remove from state
       setEmployers((prev) => prev.filter((emp) => emp.id !== id));
     } catch (err) {
       console.error(err);
@@ -86,18 +86,27 @@ export default function AdminHome() {
 
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Verified Employers
+      {/* ✅ Verified Employers Section */}
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
+        👤 Verified Employers
       </Typography>
 
-      {/* Grid layout for employer cards */}
       <Grid container spacing={4}>
         {employers.map((emp) => (
           <Grid item xs={12} sm={6} md={4} key={emp.id}>
-            <Card sx={{ p: 2, height: "100%" }}>
+            <Card
+              sx={{
+                p: 2,
+                height: "100%",
+                borderRadius: 3,
+                boxShadow: 3,
+              }}
+            >
               <CardContent>
-                <Typography variant="h6">{emp.name}</Typography>
-                <Typography>{emp.email}</Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {emp.name}
+                </Typography>
+                <Typography color="text.secondary">{emp.email}</Typography>
 
                 <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
                   <Button
@@ -147,7 +156,9 @@ export default function AdminHome() {
                   mb: 2,
                 }}
               >
-                <Typography variant="h6">{job.title}</Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {job.title}
+                </Typography>
                 <Typography>📍 Location: {job.location}</Typography>
                 <Typography>💰 Salary: {job.salary}</Typography>
                 <Typography>🛠️ Type: {job.type}</Typography>
@@ -168,6 +179,20 @@ export default function AdminHome() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ✅ Divider for spacing */}
+      <Divider sx={{ my: 6 }} />
+
+      {/* ✅ Analytics Section */}
+      {/* <Typography
+        variant="h4"
+        fontWeight="bold"
+        gutterBottom
+        sx={{ textAlign: "center" }}
+      >
+        📊 Site Analytics
+      </Typography> */}
+      <AdminAnalytics />
     </Box>
   );
 }
