@@ -15,6 +15,7 @@ import {
   Grid,
   CircularProgress,
   Button,
+  Box,
 } from "@mui/material";
 
 const Messages = () => {
@@ -53,55 +54,69 @@ const Messages = () => {
   if (loading) return <CircularProgress sx={{ m: 5 }} />;
 
   return (
-    <Grid container spacing={3} p={3}>
-      {messages.map((msg) => (
-        <Grid item xs={12} sm={6} md={4} key={msg.id}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              height: "100%",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold">
-                {msg.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {msg.email}
-              </Typography>
-              <Typography variant="body1" mt={1}>
-                {msg.message}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                display="block"
-                mt={2}
-              >
-                {msg.createdAt?.toDate().toLocaleString() || "Just Now"}
-              </Typography>
-            </CardContent>
-            <Button
-              onClick={() => handleRead(msg.id)}
-              color="primary"
-              variant="contained"
-              sx={{ borderRadius: 2, m: 2, textTransform: "none" }}
-              disabled={deletingId === msg.id}
+    <Box p={3}>
+      {/* Centered Heading */}
+      <Typography
+        variant="h4"
+        fontWeight="bold"
+        textAlign="center"
+        gutterBottom
+        mb={4}
+      >
+        Messages Received!
+      </Typography>
+
+      {/* Cards Grid */}
+      <Grid container spacing={3}>
+        {messages.map((msg) => (
+          <Grid item xs={12} sm={6} md={4} key={msg.id}>
+            <Card
+              sx={{
+                borderRadius: 3,
+                boxShadow: 3,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                height: "100%",
+              }}
             >
-              {deletingId === msg.id ? (
-                <CircularProgress size={22} color="inherit" />
-              ) : (
-                "Mark as Read"
-              )}
-            </Button>
-          </Card>
-        </Grid>
-      ))}
-    </Grid>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold">
+                  {msg.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {msg.email}
+                </Typography>
+                <Typography variant="body1" mt={1}>
+                  {msg.message}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                  mt={2}
+                >
+                  {msg.createdAt?.toDate().toLocaleString() || "Just Now"}
+                </Typography>
+              </CardContent>
+              <Button
+                onClick={() => handleRead(msg.id)}
+                color="primary"
+                variant="contained"
+                sx={{ borderRadius: 2, m: 2, textTransform: "none" }}
+                disabled={deletingId === msg.id}
+              >
+                {deletingId === msg.id ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  "Mark as Read"
+                )}
+              </Button>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };
 

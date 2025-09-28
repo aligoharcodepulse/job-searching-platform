@@ -7,6 +7,7 @@ import {
   Paper,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { db } from "../../firebase/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -18,6 +19,7 @@ export default function Contact() {
     message: "",
   });
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // track submission loading
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,9 +28,9 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Ensure all fields filled
     if (!form.name || !form.email || !form.message) return;
 
+    setLoading(true); // start loader
     try {
       await addDoc(collection(db, "messages"), {
         name: form.name,
@@ -41,6 +43,8 @@ export default function Contact() {
       setForm({ name: "", email: "", message: "" }); // reset form
     } catch (error) {
       console.error("Error adding message: ", error);
+    } finally {
+      setLoading(false); // stop loader
     }
   };
 
@@ -122,6 +126,7 @@ export default function Contact() {
             variant="contained"
             color="secondary"
             fullWidth
+            disabled={loading} // disable button while loading
             sx={{
               mt: 3,
               py: 1.2,
@@ -129,7 +134,11 @@ export default function Contact() {
               fontSize: "1rem",
             }}
           >
-            Send Message
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Send Message"
+            )}
           </Button>
         </form>
       </Paper>
