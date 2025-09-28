@@ -1,6 +1,49 @@
-import { Box, Typography, TextField, Button, Paper } from "@mui/material";
+import { useState } from "react";
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Snackbar,
+  Alert,
+} from "@mui/material";
+import { db } from "../../firebase/firebaseConfig";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function Contact() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [open, setOpen] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Ensure all fields filled
+    if (!form.name || !form.email || !form.message) return;
+
+    try {
+      await addDoc(collection(db, "messages"), {
+        name: form.name,
+        email: form.email,
+        message: form.message,
+        createdAt: serverTimestamp(),
+      });
+
+      setOpen(true); // show snackbar
+      setForm({ name: "", email: "", message: "" }); // reset form
+    } catch (error) {
+      console.error("Error adding message: ", error);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -21,7 +64,6 @@ export default function Contact() {
           borderRadius: 3,
         }}
       >
-        {/* Heading */}
         <Typography
           variant="h4"
           fontWeight="bold"
@@ -40,43 +82,69 @@ export default function Contact() {
           get back to you as soon as possible.
         </Typography>
 
-        {/* Form */}
-        <TextField
-          fullWidth
-          label="Your Name"
-          margin="normal"
-          variant="outlined"
-        />
-        <TextField
-          fullWidth
-          label="Your Email"
-          margin="normal"
-          type="email"
-          variant="outlined"
-        />
-        <TextField
-          fullWidth
-          label="Message"
-          margin="normal"
-          multiline
-          rows={4}
-          variant="outlined"
-        />
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Your Name"
+            name="name"
+            margin="normal"
+            variant="outlined"
+            required
+            value={form.name}
+            onChange={handleChange}
+          />
+          <TextField
+            fullWidth
+            label="Your Email"
+            name="email"
+            margin="normal"
+            type="email"
+            variant="outlined"
+            required
+            value={form.email}
+            onChange={handleChange}
+          />
+          <TextField
+            fullWidth
+            label="Message"
+            name="message"
+            margin="normal"
+            multiline
+            rows={4}
+            variant="outlined"
+            required
+            value={form.message}
+            onChange={handleChange}
+          />
 
-        <Button
-          variant="contained"
-          fullWidth
-          sx={{
-            mt: 3,
-            py: 1.2,
-            fontWeight: "bold",
-            textTransform: "none",
-            fontSize: "1rem",
-          }}
-        >
-          Send Message
-        </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="secondary"
+            fullWidth
+            sx={{
+              mt: 3,
+              py: 1.2,
+              textTransform: "none",
+              fontSize: "1rem",
+            }}
+          >
+            Send Message
+          </Button>
+        </form>
       </Paper>
+
+      {/* Snackbar for success */}
+      <Snackbar
+        open={open}
+        autoHideDuration={3000}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="success" onClose={() => setOpen(false)}>
+          Message Sent Successfully!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
