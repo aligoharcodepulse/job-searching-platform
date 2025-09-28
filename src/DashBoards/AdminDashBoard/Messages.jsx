@@ -20,6 +20,7 @@ import {
 const Messages = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null); // Track message being deleted
 
   const fetchMessages = async () => {
     try {
@@ -38,11 +39,14 @@ const Messages = () => {
   }, []);
 
   const handleRead = async (id) => {
+    setDeletingId(id); // show loader for this message
     try {
       await deleteDoc(doc(db, "messages", id));
-      setMessages(messages.filter((msg) => msg.id !== id)); // remove from UI
+      setMessages((prev) => prev.filter((msg) => msg.id !== id)); // remove from UI
     } catch (error) {
       console.error("Error deleting message:", error);
+    } finally {
+      setDeletingId(null); // reset loader
     }
   };
 
@@ -52,7 +56,16 @@ const Messages = () => {
     <Grid container spacing={3} p={3}>
       {messages.map((msg) => (
         <Grid item xs={12} sm={6} md={4} key={msg.id}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              height: "100%",
+            }}
+          >
             <CardContent>
               <Typography variant="h6" fontWeight="bold">
                 {msg.name}
@@ -77,8 +90,13 @@ const Messages = () => {
               color="primary"
               variant="contained"
               sx={{ borderRadius: 2, m: 2, textTransform: "none" }}
+              disabled={deletingId === msg.id}
             >
-              Mark as Read
+              {deletingId === msg.id ? (
+                <CircularProgress size={22} color="inherit" />
+              ) : (
+                "Mark as Read"
+              )}
             </Button>
           </Card>
         </Grid>
