@@ -38,7 +38,7 @@ export default function EmployerHome() {
   const [openApplicants, setOpenApplicants] = useState(false);
   const [selectedJobApplicants, setSelectedJobApplicants] = useState(null);
 
-  const [loadingStatus, setLoadingStatus] = useState(null); // ✅ Track which applicant is loading
+  const [loadingStatus, setLoadingStatus] = useState(null);
 
   useEffect(() => {
     if (!employerId) return;
@@ -58,7 +58,7 @@ export default function EmployerHome() {
       const jobsData = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setJobs(jobsData);
 
-      // ✅ Track real-time applicant counts for each job
+      // Track real-time applicant counts for each job
       jobsData.forEach((job) => {
         const appsQuery = query(collection(db, "applications"), where("jobId", "==", job.id));
         onSnapshot(appsQuery, (appSnap) => {
@@ -76,7 +76,7 @@ export default function EmployerHome() {
     };
   }, [employerId]);
 
-  // ✅ Post job
+  // Post job
   const handleJobPost = async (jobData) => {
     await addDoc(collection(db, "jobs"), {
       ...jobData,
@@ -86,18 +86,18 @@ export default function EmployerHome() {
     setShowPostJob(false);
   };
 
-  // ✅ Delete job
+  // Delete job
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "jobs", id));
   };
 
-  // ✅ Start edit mode
+  // Edit job
   const handleEdit = (job) => {
     setCurrentJob(job);
     setShowEditJob(true);
   };
 
-  // ✅ Update job
+  // Update job
   const handleUpdateJob = async (updatedJob) => {
     if (!currentJob) return;
     await updateDoc(doc(db, "jobs", currentJob.id), updatedJob);
@@ -105,7 +105,7 @@ export default function EmployerHome() {
     setCurrentJob(null);
   };
 
-  // ✅ Open applicants modal (fetch from applications collection)
+  // View applicants
   const handleViewApplicants = async (job) => {
     const q = query(collection(db, "applications"), where("jobId", "==", job.id));
     const snapshot = await getDocs(q);
@@ -119,28 +119,37 @@ export default function EmployerHome() {
     setOpenApplicants(true);
   };
 
-  // ✅ Change applicant status (with loader)
-  const handleStatusChange = async (applicationId, newStatus) => {
-    setLoadingStatus(applicationId); // ✅ show loader for this applicant
+  // Change applicant status (with loader + remove shortlisted/rejected)
+  const handleStatusChange = async (applicationId, newStatus, jobId) => {
+    setLoadingStatus(applicationId);
     const appRef = doc(db, "applications", applicationId);
     await updateDoc(appRef, { status: newStatus });
 
-    // update local state
     setSelectedJobApplicants((prev) => ({
       ...prev,
-      applicants: prev.applicants.map((app) =>
-        app.id === applicationId ? { ...app, status: newStatus } : app
+      applicants: prev.applicants.filter((app) =>
+        app.id === applicationId
+          ? !(newStatus === "Shortlisted" || newStatus === "Rejected")
+          : true
       ),
     }));
 
-    setLoadingStatus(null); // ✅ stop loader
+    // Reduce applicant count immediately
+    if (newStatus === "Shortlisted" || newStatus === "Rejected") {
+      setApplicantCounts((prev) => ({
+        ...prev,
+        [jobId]: Math.max((prev[jobId] || 1) - 1, 0),
+      }));
+    }
+
+    setLoadingStatus(null);
   };
 
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h4">Employer Dashboard</Typography>
 
-      {/* 🔹 Verification / Job Posting Flow */}
+      {/* Verification / Job Posting Flow */}
       {status === "approved" ? (
         <Button
           variant="contained"
@@ -169,7 +178,7 @@ export default function EmployerHome() {
         </Button>
       )}
 
-      {/* ✅ Verification Dialog */}
+      {/* Verification Dialog */}
       <Dialog open={showVerification} onClose={() => setShowVerification(false)}>
         <DialogTitle>Verification Required</DialogTitle>
         <DialogContent>
@@ -180,7 +189,7 @@ export default function EmployerHome() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Post Job Dialog */}
+      {/* Post Job Dialog */}
       <Dialog open={showPostJob} onClose={() => setShowPostJob(false)}>
         <DialogTitle>Post Job</DialogTitle>
         <DialogContent>
@@ -188,7 +197,7 @@ export default function EmployerHome() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Edit Job Dialog */}
+      {/* Edit Job Dialog */}
       <Dialog open={showEditJob} onClose={() => setShowEditJob(false)}>
         <DialogTitle>Edit Job</DialogTitle>
         <DialogContent>
@@ -198,7 +207,7 @@ export default function EmployerHome() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Employer's Jobs */}
+      {/* Employer's Jobs */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" gutterBottom>
           My Posted Jobs
@@ -250,7 +259,7 @@ export default function EmployerHome() {
         )}
       </Box>
 
-      {/* ✅ Applicants Modal */}
+      {/* Applicants Modal */}
       <Dialog
         open={openApplicants}
         onClose={() => setOpenApplicants(false)}
@@ -275,7 +284,9 @@ export default function EmployerHome() {
                   <Button
                     variant="outlined"
                     color="info"
-                    onClick={() => handleStatusChange(app.id, "Reviewed")}
+                    onClick={() =>
+                      handleStatusChange(app.id, "Reviewed", selectedJobApplicants.id)
+                    }
                     disabled={loadingStatus === app.id}
                   >
                     {loadingStatus === app.id ? (
@@ -287,7 +298,9 @@ export default function EmployerHome() {
                   <Button
                     variant="outlined"
                     color="success"
-                    onClick={() => handleStatusChange(app.id, "Shortlisted")}
+                    onClick={() =>
+                      handleStatusChange(app.id, "Shortlisted", selectedJobApplicants.id)
+                    }
                     disabled={loadingStatus === app.id}
                   >
                     {loadingStatus === app.id ? (
@@ -299,7 +312,9 @@ export default function EmployerHome() {
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={() => handleStatusChange(app.id, "Rejected")}
+                    onClick={() =>
+                      handleStatusChange(app.id, "Rejected", selectedJobApplicants.id)
+                    }
                     disabled={loadingStatus === app.id}
                   >
                     {loadingStatus === app.id ? (
