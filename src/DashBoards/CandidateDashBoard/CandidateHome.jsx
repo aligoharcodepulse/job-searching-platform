@@ -6,14 +6,12 @@ import {
   doc,
   setDoc,
   getDoc,
-  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   Box,
   Typography,
-  Paper,
   TextField,
   Button,
   Container,
@@ -23,7 +21,28 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Card,
+  Avatar,
+  Chip,
+  Fade,
+  Slide,
 } from "@mui/material";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faSearch,
+  faBriefcase,
+  faMapMarkerAlt,
+  faClock,
+  faDollarSign,
+  faBuilding,
+  faUser,
+  faEdit,
+  faSave,
+  faTimes,
+  faPlus,
+  faRocket,
+  faCheckCircle,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function CandidateHome() {
   const [candidateId, setCandidateId] = useState(null);
@@ -32,7 +51,11 @@ export default function CandidateHome() {
   const [searchQuery, setSearchQuery] = useState("");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", skills: "", experience: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    skills: "",
+    experience: "",
+  });
 
   // Application states
   const [applications, setApplications] = useState({});
@@ -62,7 +85,10 @@ export default function CandidateHome() {
 
     const fetchJobs = async () => {
       const snapshot = await getDocs(collection(db, "jobs"));
-      const jobsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const jobsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setJobs(jobsData);
       setFilteredJobs(jobsData);
     };
@@ -73,8 +99,6 @@ export default function CandidateHome() {
 
       if (profileSnap.exists()) {
         const data = profileSnap.data();
-
-        // ✅ Check if data has actual values
         if (data.name || data.skills || data.experience) {
           setProfile(data);
           setFormData(data);
@@ -83,8 +107,8 @@ export default function CandidateHome() {
           setFormData({ name: "", skills: "", experience: "" });
         }
       } else {
-        setProfile(null); // no profile → first-time login
-        setFormData({ name: "", skills: "", experience: "" }); // clear form
+        setProfile(null);
+        setFormData({ name: "", skills: "", experience: "" });
       }
     };
 
@@ -106,22 +130,34 @@ export default function CandidateHome() {
     fetchApplications();
   }, [candidateId]);
 
-  // Handle form changes
-  const handleChange = (e) =>
-    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+  // Search functionality
+  useEffect(() => {
+    const filtered = jobs.filter(
+      (job) =>
+        job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredJobs(filtered);
+  }, [searchQuery, jobs]);
 
   // Save or update profile
   const handleSaveProfile = async () => {
+    if (
+      !candidateId ||
+      !formData.name ||
+      !formData.skills ||
+      !formData.experience
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
+
     setLoading(true);
-    const profileRef = doc(db, "candidates", candidateId);
     try {
-      if (profile) {
-        await updateDoc(profileRef, formData);
-        setProfile({ ...profile, ...formData });
-      } else {
-        await setDoc(profileRef, formData);
-        setProfile(formData); // ✅ set profile after first save
-      }
+      const profileRef = doc(db, "candidates", candidateId);
+      await setDoc(profileRef, formData, { merge: true });
+      setProfile(formData);
       setEditProfile(false);
     } catch (err) {
       console.error("Error saving profile:", err);
@@ -130,33 +166,26 @@ export default function CandidateHome() {
     }
   };
 
-  // Search filter
-  const handleSearch = () => {
-    const query = searchQuery.toLowerCase();
-    setFilteredJobs(
-      jobs.filter(
-        (job) =>
-          job.title.toLowerCase().includes(query) ||
-          job.location.toLowerCase().includes(query) ||
-          job.type?.toLowerCase().includes(query)
-      )
-    );
-  };
-
-  // Open modal for application
   const handleApplyClick = (job) => {
+    if (!profile) {
+      alert("Please create your profile first!");
+      return;
+    }
     setSelectedJob(job);
     setCoverLetter("");
     setOpenModal(true);
   };
 
-  // Submit application
   const handleSubmitApplication = async () => {
     if (!selectedJob || !profile) return;
     setApplying(true);
 
     try {
-      const appRef = doc(db, "applications", `${selectedJob.id}_${candidateId}`);
+      const appRef = doc(
+        db,
+        "applications",
+        `${selectedJob.id}_${candidateId}`
+      );
       await setDoc(appRef, {
         jobId: selectedJob.id,
         candidateId,
@@ -175,187 +204,873 @@ export default function CandidateHome() {
     }
   };
 
-  // Status button config
-  const getStatusButton = (status) => {
-    const config = {
-      Applied: { color: "secondary", text: "Applied" },
-      Reviewed: { color: "warning", text: "Reviewed" },
-      Shortlisted: { color: "success", text: "Shortlisted ✅" },
-      Rejected: { color: "error", text: "Rejected ❌" },
+  const getStatusConfig = (status) => {
+    const configs = {
+      Applied: {
+        color: "#6366f1",
+        text: "Applied",
+        bgColor: "rgba(99, 102, 241, 0.1)",
+      },
+      Reviewed: {
+        color: "#f59e0b",
+        text: "Reviewed",
+        bgColor: "rgba(245, 158, 11, 0.1)",
+      },
+      Shortlisted: {
+        color: "#10b981",
+        text: "Shortlisted ✅",
+        bgColor: "rgba(16, 185, 129, 0.1)",
+      },
+      Rejected: {
+        color: "#ef4444",
+        text: "Rejected ❌",
+        bgColor: "rgba(239, 68, 68, 0.1)",
+      },
     };
-    return config[status] || { color: "secondary", text: "Apply Now" };
+    return (
+      configs[status] || {
+        color: "#6366f1",
+        text: "Apply Now",
+        bgColor: "transparent",
+      }
+    );
   };
 
-  // If user not logged in
   if (!candidateId) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Typography variant="h6">Please log in to access your dashboard.</Typography>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "var(--gradient-bg)",
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            color: "var(--text-primary)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          Please log in to access your dashboard.
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f9f9f9", pb: 4 }}>
-      {/* Hero Section */}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "var(--gradient-bg)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Animated Background */}
       <Box
         sx={{
-          height: "350px",
-          backgroundImage: "url(/images/hero-banner-1.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          textAlign: "center",
-          mb: 4,
-          px: 2,
-          position: "relative",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%)
+          `,
+          animation: "pulse 6s ease-in-out infinite",
         }}
-      >
-        <Box sx={{ position: "absolute", inset: 0, bgcolor: "rgba(0,0,0,0.4)" }} />
-        <Typography variant="h3" sx={{ fontWeight: "bold", position: "relative", zIndex: 1, mb: 2 }}>
-          Find Your Dream Job Today!
-        </Typography>
-        <Box
-          sx={{
-            bgcolor: "white",
-            borderRadius: "5px",
-            display: "flex",
-            width: { xs: "90%", sm: "60%" },
-            boxShadow: 3,
-            p: 1,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <TextField
-            fullWidth
-            placeholder="Search by job title, location, or type (Remote/On-site)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Button variant="contained" color="secondary" onClick={handleSearch} sx={{ ml: 1, px: 4 }}>
-            Search
-          </Button>
-        </Box>
-      </Box>
+      />
 
-      <Container>
-        {/* Profile Section */}
-        {!profile ? (
-          // Create profile (first time)
-          <Paper sx={{ p: 3, mb: 4 }}>
-            <Typography variant="h5">Create Your Profile</Typography>
-            <TextField fullWidth margin="normal" label="Full Name" name="name" value={formData.name} onChange={handleChange} />
-            <TextField fullWidth margin="normal" label="Skills" name="skills" value={formData.skills} onChange={handleChange} />
-            <TextField fullWidth margin="normal" label="Experience" name="experience" value={formData.experience} onChange={handleChange} />
-            <Button variant="contained" color="secondary" onClick={handleSaveProfile} disabled={loading} sx={{ mt: 2 }}>
-              {loading ? <CircularProgress size={24} /> : "Save Profile"}
-            </Button>
-          </Paper>
-        ) : editProfile ? (
-          // Update profile (only after clicking update)
-          <Paper sx={{ p: 3, mb: 4 }}>
-            <Typography variant="h5">Update Your Profile</Typography>
-            <TextField fullWidth margin="normal" label="Full Name" name="name" value={formData.name} onChange={handleChange} />
-            <TextField fullWidth margin="normal" label="Skills" name="skills" value={formData.skills} onChange={handleChange} />
-            <TextField fullWidth margin="normal" label="Experience" name="experience" value={formData.experience} onChange={handleChange} />
-            <Button variant="contained" color="secondary" onClick={handleSaveProfile} disabled={loading} sx={{ mt: 2 }}>
-              {loading ? <CircularProgress size={24} /> : "Update Profile"}
-            </Button>
-          </Paper>
-        ) : (
-          // Profile summary (default after profile created)
-          <Paper sx={{ p: 3, mb: 4, textAlign: "center" }}>
-            <Typography variant="h6">Welcome, {profile.name}! 🎉</Typography>
-            <Typography>Skills: {profile.skills}</Typography>
-            <Typography>Experience: {profile.experience}</Typography>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setFormData(profile);
-                setEditProfile(true);
+      <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1, py: 4 }}>
+        {/* Hero Section */}
+        <Fade in timeout={1000}>
+          <Box textAlign="center" mb={6}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 800,
+                background: "var(--gradient-primary)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                mb: 2,
+                fontSize: { xs: "2rem", md: "3rem" },
               }}
-              sx={{ mt: 2 }}
             >
-              Update Profile
-            </Button>
-          </Paper>
-        )}
+              <FontAwesomeIcon
+                icon={faRocket}
+                style={{ marginRight: "16px" }}
+              />
+              Welcome to Your Dashboard
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "var(--text-secondary)",
+                fontFamily: "Inter, sans-serif",
+                maxWidth: "600px",
+                mx: "auto",
+                lineHeight: 1.6,
+              }}
+            >
+              Find your dream job and take your career to the next level
+            </Typography>
+          </Box>
+        </Fade>
 
-        {/* Jobs Section */}
-        <Typography variant="h4" gutterBottom>
-          Available Jobs
-        </Typography>
-        <Grid container spacing={3}>
-          {filteredJobs.length > 0 ? (
-            filteredJobs.map((job) => {
-              const status = applications[job.id];
-              const { color, text } = getStatusButton(status);
+        {/* Profile Section */}
+        <Slide direction="up" in timeout={1200}>
+          <Card
+            className="card animate-fadeInUp"
+            sx={{
+              background: "var(--card-bg)",
+              backdropFilter: "blur(15px)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "20px",
+              mb: 6,
+              p: 4,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faUser}
+                  style={{ marginRight: "12px", color: "#10b981" }}
+                />
+                Your Profile
+              </Typography>
+              <Button
+                onClick={() => setEditProfile(!editProfile)}
+                sx={{
+                  background: editProfile
+                    ? "var(--danger-color)"
+                    : "var(--gradient-secondary)",
+                  color: "#ffffff",
+                  px: 3,
+                  py: 1,
+                  borderRadius: "12px",
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={editProfile ? faTimes : faEdit}
+                  style={{ marginRight: "8px" }}
+                />
+                {editProfile ? "Cancel" : "Edit Profile"}
+              </Button>
+            </Box>
 
-              return (
-                <Grid item xs={12} sm={6} md={4} key={job.id}>
-                  <Paper
+            {!profile && !editProfile ? (
+              <Box textAlign="center" py={4}>
+                <Avatar
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    mx: "auto",
+                    mb: 3,
+                    background: "var(--gradient-primary)",
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUser} style={{ fontSize: "2rem" }} />
+                </Avatar>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "var(--text-primary)",
+                    fontFamily: "Poppins, sans-serif",
+                    mb: 2,
+                  }}
+                >
+                  Create Your Profile
+                </Typography>
+                <Typography
+                  sx={{
+                    color: "var(--text-secondary)",
+                    fontFamily: "Inter, sans-serif",
+                    mb: 3,
+                  }}
+                >
+                  Set up your profile to start applying for jobs
+                </Typography>
+                <Button
+                  onClick={() => setEditProfile(true)}
+                  sx={{
+                    background: "var(--gradient-primary)",
+                    color: "#ffffff",
+                    px: 4,
+                    py: 2,
+                    borderRadius: "12px",
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 600,
+                    "&:hover": {
+                      background: "var(--gradient-accent)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faPlus}
+                    style={{ marginRight: "8px" }}
+                  />
+                  Create Profile
+                </Button>
+              </Box>
+            ) : editProfile ? (
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Full Name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      boxShadow: 4,
-                      transition: "0.3s",
-                      "&:hover": { transform: "scale(1.05)" },
+                      "& .MuiOutlinedInput-root": {
+                        background: "rgba(255, 255, 255, 0.05)",
+                        borderRadius: "12px",
+                        "& fieldset": {
+                          borderColor: "var(--glass-border)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "var(--primary-color)",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "var(--text-secondary)",
+                      },
+                      "& .MuiOutlinedInput-input": {
+                        color: "var(--text-primary)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Skills"
+                    value={formData.skills}
+                    onChange={(e) =>
+                      setFormData({ ...formData, skills: e.target.value })
+                    }
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        background: "rgba(255, 255, 255, 0.05)",
+                        borderRadius: "12px",
+                        "& fieldset": {
+                          borderColor: "var(--glass-border)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "var(--primary-color)",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "var(--text-secondary)",
+                      },
+                      "& .MuiOutlinedInput-input": {
+                        color: "var(--text-primary)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Experience"
+                    value={formData.experience}
+                    onChange={(e) =>
+                      setFormData({ ...formData, experience: e.target.value })
+                    }
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        background: "rgba(255, 255, 255, 0.05)",
+                        borderRadius: "12px",
+                        "& fieldset": {
+                          borderColor: "var(--glass-border)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "var(--primary-color)",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "var(--text-secondary)",
+                      },
+                      "& .MuiOutlinedInput-input": {
+                        color: "var(--text-primary)",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={loading}
+                    sx={{
+                      background: "var(--gradient-secondary)",
+                      color: "#ffffff",
+                      px: 4,
+                      py: 2,
+                      borderRadius: "12px",
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 600,
+                      "&:hover": {
+                        background: "var(--gradient-primary)",
+                        transform: "translateY(-2px)",
+                      },
                     }}
                   >
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
-                      {job.title}
+                    {loading ? (
+                      <CircularProgress
+                        size={20}
+                        sx={{ mr: 1, color: "#ffffff" }}
+                      />
+                    ) : (
+                      <FontAwesomeIcon
+                        icon={faSave}
+                        style={{ marginRight: "8px" }}
+                      />
+                    )}
+                    Save Profile
+                  </Button>
+                </Grid>
+              </Grid>
+            ) : (
+              <Grid container spacing={3} alignItems="center">
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Box textAlign="center">
+                    <Avatar
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        mx: "auto",
+                        mb: 2,
+                        background: "var(--gradient-secondary)",
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        style={{ fontSize: "2.5rem" }}
+                      />
+                    </Avatar>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: "var(--text-primary)",
+                        fontFamily: "Poppins, sans-serif",
+                      }}
+                    >
+                      {profile?.name}
                     </Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {job.description}
-                    </Typography>
-                    <Typography sx={{ mt: 1 }}>
-                      💰 Salary: <b>{job.salary}</b>
-                    </Typography>
-                    <Typography>📍 Location: <b>{job.location}</b></Typography>
-                    <Typography>🏢 Type: <b>{job.type || "N/A"}</b></Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 9 }}>
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card
+                        sx={{
+                          background: "rgba(16, 185, 129, 0.1)",
+                          border: "1px solid rgba(16, 185, 129, 0.2)",
+                          borderRadius: "12px",
+                          p: 3,
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            color: "#10b981",
+                            fontFamily: "Poppins, sans-serif",
+                            fontWeight: 600,
+                            mb: 1,
+                          }}
+                        >
+                          Skills
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: "var(--text-primary)",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          {profile?.skills}
+                        </Typography>
+                      </Card>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card
+                        sx={{
+                          background: "rgba(99, 102, 241, 0.1)",
+                          border: "1px solid rgba(99, 102, 241, 0.2)",
+                          borderRadius: "12px",
+                          p: 3,
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            color: "#6366f1",
+                            fontFamily: "Poppins, sans-serif",
+                            fontWeight: 600,
+                            mb: 1,
+                          }}
+                        >
+                          Experience
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: "var(--text-primary)",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          {profile?.experience}
+                        </Typography>
+                      </Card>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            )}
+          </Card>
+        </Slide>
+
+        {/* Search Section */}
+        <Fade in timeout={1400}>
+          <Card
+            className="card animate-fadeInUp"
+            sx={{
+              background: "var(--card-bg)",
+              backdropFilter: "blur(15px)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "20px",
+              mb: 6,
+              p: 4,
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                mb: 3,
+                textAlign: "center",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faSearch}
+                style={{ marginRight: "12px", color: "#f59e0b" }}
+              />
+              Find Your Perfect Job
+            </Typography>
+            <Box sx={{ position: "relative", maxWidth: "600px", mx: "auto" }}>
+              <TextField
+                fullWidth
+                placeholder="Search jobs by title, company, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    background: "rgba(255, 255, 255, 0.05)",
+                    borderRadius: "15px",
+                    height: "60px",
+                    fontSize: "1.1rem",
+                    "& fieldset": {
+                      borderColor: "var(--glass-border)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "var(--primary-color)",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "var(--primary-color)",
+                    },
+                  },
+                  "& .MuiOutlinedInput-input": {
+                    color: "var(--text-primary)",
+                    "&::placeholder": {
+                      color: "var(--text-secondary)",
+                      opacity: 1,
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <FontAwesomeIcon
+                      icon={faSearch}
+                      style={{
+                        color: "var(--primary-color)",
+                        marginRight: "12px",
+                        fontSize: "1.2rem",
+                      }}
+                    />
+                  ),
+                }}
+              />
+            </Box>
+          </Card>
+        </Fade>
+
+        {/* Jobs Section */}
+        <Typography
+          variant="h3"
+          sx={{
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            mb: 4,
+            textAlign: "center",
+          }}
+        >
+          <FontAwesomeIcon
+            icon={faBriefcase}
+            style={{ marginRight: "16px", color: "#6366f1" }}
+          />
+          Available Opportunities
+        </Typography>
+
+        <Grid container spacing={4}>
+          {filteredJobs.map((job) => {
+            const status = applications[job.id];
+            const statusConfig = getStatusConfig(status);
+
+            return (
+              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={job.id}>
+                <Fade in timeout={1600}>
+                  <Card
+                    className="card animate-fadeInUp"
+                    sx={{
+                      background: "var(--card-bg)",
+                      backdropFilter: "blur(15px)",
+                      border: "1px solid var(--glass-border)",
+                      borderRadius: "20px",
+                      p: 3,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-8px)",
+                        boxShadow:
+                          "0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.2)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 3,
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            width: 60,
+                            height: 60,
+                            background: "var(--gradient-accent)",
+                            fontSize: "1.5rem",
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faBuilding} />
+                        </Avatar>
+                        {status && (
+                          <Chip
+                            label={statusConfig.text}
+                            sx={{
+                              background: statusConfig.bgColor,
+                              color: statusConfig.color,
+                              border: `1px solid ${statusConfig.color}`,
+                              fontWeight: 600,
+                            }}
+                          />
+                        )}
+                      </Box>
+
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontFamily: "Poppins, sans-serif",
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                          mb: 1,
+                        }}
+                      >
+                        {job.title}
+                      </Typography>
+
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "var(--primary-color)",
+                          fontFamily: "Inter, sans-serif",
+                          fontWeight: 600,
+                          mb: 2,
+                        }}
+                      >
+                        {job.company}
+                      </Typography>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faMapMarkerAlt}
+                            style={{
+                              color: "var(--secondary-color)",
+                              marginRight: "8px",
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {job.location}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faDollarSign}
+                            style={{
+                              color: "var(--accent-color)",
+                              marginRight: "8px",
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {job.salary || "Competitive"}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <FontAwesomeIcon
+                            icon={faClock}
+                            style={{
+                              color: "var(--text-muted)",
+                              marginRight: "8px",
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {job.type || "Full-time"}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography
+                        sx={{
+                          color: "var(--text-secondary)",
+                          fontFamily: "Inter, sans-serif",
+                          lineHeight: 1.6,
+                          mb: 3,
+                        }}
+                      >
+                        {job.description?.substring(0, 150)}...
+                      </Typography>
+                    </Box>
 
                     <Button
-                      variant="contained"
-                      color={color}
-                      disabled={!!status}
                       onClick={() => handleApplyClick(job)}
-                      sx={{ mt: 2, borderRadius: "20px" }}
+                      disabled={!!status}
+                      sx={{
+                        background: status
+                          ? `linear-gradient(135deg, ${statusConfig.color}, ${statusConfig.color}dd)`
+                          : "var(--gradient-primary)",
+                        color: "#ffffff",
+                        py: 2,
+                        borderRadius: "12px",
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        "&:hover": {
+                          background: status
+                            ? `linear-gradient(135deg, ${statusConfig.color}dd, ${statusConfig.color}bb)`
+                            : "var(--gradient-accent)",
+                          transform: status ? "none" : "translateY(-2px)",
+                        },
+                        "&:disabled": {
+                          color: "#ffffff",
+                        },
+                      }}
                     >
-                      {text}
+                      {status ? (
+                        <>
+                          <FontAwesomeIcon
+                            icon={faCheckCircle}
+                            style={{ marginRight: "8px" }}
+                          />
+                          {statusConfig.text}
+                        </>
+                      ) : (
+                        <>
+                          <FontAwesomeIcon
+                            icon={faRocket}
+                            style={{ marginRight: "8px" }}
+                          />
+                          Apply Now
+                        </>
+                      )}
                     </Button>
-                  </Paper>
-                </Grid>
-              );
-            })
-          ) : (
-            <Typography sx={{ mt: 3 }}>No jobs found.</Typography>
-          )}
+                  </Card>
+                </Fade>
+              </Grid>
+            );
+          })}
         </Grid>
+
+        {filteredJobs.length === 0 && (
+          <Box textAlign="center" py={8}>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "var(--text-secondary)",
+                fontFamily: "Inter, sans-serif",
+                mb: 2,
+              }}
+            >
+              No jobs found matching your search
+            </Typography>
+            <Typography
+              sx={{
+                color: "var(--text-muted)",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              Try adjusting your search criteria
+            </Typography>
+          </Box>
+        )}
       </Container>
 
-      {/* Apply Modal */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Submit Application</DialogTitle>
+      {/* Application Modal */}
+      <Dialog
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: "var(--card-bg)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid var(--glass-border)",
+            borderRadius: "20px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            color: "var(--text-primary)",
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+          }}
+        >
+          <FontAwesomeIcon
+            icon={faBriefcase}
+            style={{ marginRight: "12px", color: "#6366f1" }}
+          />
+          Apply for {selectedJob?.title}
+        </DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
             multiline
-            rows={5}
-            label="Cover Letter"
+            rows={6}
+            label="Cover Letter (Optional)"
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
-            sx={{ mt: 2 }}
+            sx={{
+              mt: 2,
+              "& .MuiOutlinedInput-root": {
+                background: "rgba(255, 255, 255, 0.05)",
+                borderRadius: "12px",
+                "& fieldset": {
+                  borderColor: "var(--glass-border)",
+                },
+                "&:hover fieldset": {
+                  borderColor: "var(--primary-color)",
+                },
+              },
+              "& .MuiInputLabel-root": {
+                color: "var(--text-secondary)",
+              },
+              "& .MuiOutlinedInput-input": {
+                color: "var(--text-primary)",
+              },
+            }}
+            placeholder="Tell the employer why you're the perfect fit for this role..."
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmitApplication} disabled={applying}>
-            {applying ? <CircularProgress size={24} color="secondary" /> : "Submit Application"}
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => setOpenModal(false)}
+            sx={{
+              color: "var(--text-secondary)",
+              fontFamily: "Inter, sans-serif",
+              "&:hover": {
+                background: "var(--glass-bg)",
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitApplication}
+            disabled={applying}
+            sx={{
+              background: "var(--gradient-primary)",
+              color: "#ffffff",
+              px: 4,
+              py: 1,
+              borderRadius: "12px",
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 600,
+              "&:hover": {
+                background: "var(--gradient-accent)",
+              },
+            }}
+          >
+            {applying ? (
+              <CircularProgress size={20} sx={{ mr: 1, color: "#ffffff" }} />
+            ) : (
+              <FontAwesomeIcon icon={faRocket} style={{ marginRight: "8px" }} />
+            )}
+            Submit Application
           </Button>
         </DialogActions>
       </Dialog>

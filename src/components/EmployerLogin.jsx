@@ -12,8 +12,26 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  InputAdornment,
+  Fade,
+  Slide,
+  Container,
+  Chip,
 } from "@mui/material";
-import WorkIcon from "@mui/icons-material/Work";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBuilding,
+  faEnvelope,
+  faLock,
+  faEye,
+  faEyeSlash,
+  faArrowLeft,
+  faSignInAlt,
+  faUserPlus,
+  faCheckCircle,
+  faBriefcase,
+} from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase/firebaseConfig";
 import {
@@ -28,7 +46,8 @@ export default function EmployerLogin() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [successModal, setSuccessModal] = useState(false); // ✅ success modal state
+  const [successModal, setSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -36,26 +55,34 @@ export default function EmployerLogin() {
     setError("");
     setLoading(true);
 
+    // Check if Firebase is properly configured
+    if (!auth || !db) {
+      setError("Firebase is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
-        // ✅ Create Firebase User
         const userCred = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
 
-        // ✅ Store employee profile in Firestore
         await setDoc(doc(db, "employer", userCred.user.uid), {
           email,
           createdAt: new Date(),
         });
 
-        setSuccessModal(true); // ✅ show success modal
+        setSuccessModal(true);
         setIsSignUp(false);
       } else {
-        // ✅ Sign In
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const userCred = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
 
         const profileRef = doc(db, "employer", userCred.user.uid);
         const profileSnap = await getDoc(profileRef);
@@ -64,7 +91,7 @@ export default function EmployerLogin() {
           localStorage.setItem("employerAuth", userCred.user.uid);
           navigate(`/employer-dashboard/${userCred.user.uid}`);
         } else {
-          setError("No profile found ❌");
+          setError("No profile found. Please contact support.");
         }
       }
     } catch (err) {
@@ -81,94 +108,416 @@ export default function EmployerLogin() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #e8f5e9, #c8e6c9)",
-        p: 2,
+        background: "var(--gradient-bg)",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Paper
-        elevation={6}
-        sx={{ p: 4, maxWidth: 400, width: "100%", borderRadius: 2 }}
-      >
-        <Box
-          sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
-        >
-          <Avatar sx={{ m: 1, bgcolor: "success.main" }}>
-            <WorkIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5" fontWeight="bold">
-            {isSignUp ? "Create Employer Account" : "Employer Login"}
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
+      {/* Background Effects */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+          radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%)
+        `,
+          pointerEvents: "none",
+        }}
+      />
 
-            {error && (
-              <Typography color="error" variant="body2">
-                {error}
-              </Typography>
-            )}
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{ mt: 3, mb: 2, bgcolor: "success.main" }}
-            >
-              {loading ? (
-                <CircularProgress size={24} sx={{ color: "white" }} />
-              ) : isSignUp ? (
-                "Sign Up"
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Link
-                href="#"
-                variant="body2"
-                onClick={() => setIsSignUp(!isSignUp)}
+      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+        <Fade in timeout={800}>
+          <Paper
+            className="glass-card"
+            sx={{
+              p: 4,
+              maxWidth: 450,
+              width: "100%",
+              mx: "auto",
+              background: "var(--card-bg)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-xl)",
+              boxShadow: "var(--shadow-xl)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: "var(--shadow-xl), 0 0 20px rgba(16, 185, 129, 0.3)",
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              },
+            }}
+          >
+            {/* Back Button */}
+            <Box sx={{ mb: 2 }}>
+              <IconButton
+                onClick={() => navigate("/")}
+                className="btn-glass"
+                sx={{
+                  background: "var(--glass-bg)",
+                  border: "1px solid var(--glass-border)",
+                  "&:hover": {
+                    background: "rgba(255, 255, 255, 0.1)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
               >
-                {isSignUp ? "Already have an account? Login" : "Create Account"}
-              </Link>
+                <FontAwesomeIcon
+                  icon={faArrowLeft}
+                  style={{ color: "var(--text-primary)" }}
+                />
+              </IconButton>
             </Box>
-          </Box>
-        </Box>
-      </Paper>
 
-      {/* ✅ Success Modal */}
-      <Dialog open={successModal} onClose={() => setSuccessModal(false)}>
-        <DialogTitle>🎉 Account Created Successfully</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Your employer account has been created. Please log in to continue.
+            <Slide direction="up" in timeout={1000}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                {/* Enhanced Avatar */}
+                <Box
+                  sx={{
+                    background: "var(--gradient-secondary)",
+                    borderRadius: "50%",
+                    p: 3,
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "var(--shadow-lg)",
+                    animation: "glow 3s ease-in-out infinite",
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faBuilding}
+                    style={{ color: "white", fontSize: "2rem" }}
+                  />
+                </Box>
+
+                {/* Mode Indicator */}
+                <Chip
+                  icon={
+                    <FontAwesomeIcon
+                      icon={isSignUp ? faUserPlus : faSignInAlt}
+                    />
+                  }
+                  label={isSignUp ? "Create Account" : "Sign In"}
+                  sx={{
+                    mb: 2,
+                    background: "var(--gradient-secondary)",
+                    color: "white",
+                    fontWeight: 600,
+                  }}
+                />
+
+                <Typography
+                  component="h1"
+                  sx={{
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    fontFamily: "Poppins, sans-serif",
+                    mb: 1,
+                    color: "var(--text-primary)",
+                    textAlign: "center",
+                  }}
+                >
+                  {isSignUp ? "Join as Employer" : "Employer Portal"}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: "var(--text-secondary)",
+                    mb: 4,
+                    textAlign: "center",
+                    fontSize: "1rem",
+                  }}
+                >
+                  {isSignUp
+                    ? "Create your account to start hiring talent"
+                    : "Access your recruitment dashboard"}
+                </Typography>
+
+                {/* Form */}
+                <Box
+                  component="form"
+                  onSubmit={handleSubmit}
+                  sx={{ width: "100%" }}
+                >
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Email Address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    sx={{
+                      mb: 2,
+                      "& .MuiOutlinedInput-root": {
+                        background: "var(--glass-bg)",
+                        borderRadius: "var(--radius-lg)",
+                        "& fieldset": {
+                          borderColor: "var(--glass-border)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "var(--secondary-color)",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "var(--secondary-color)",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "var(--text-secondary)",
+                      },
+                      "& .MuiOutlinedInput-input": {
+                        color: "var(--text-primary)",
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FontAwesomeIcon
+                            icon={faEnvelope}
+                            style={{ color: "var(--text-secondary)" }}
+                          />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    sx={{
+                      mb: 2,
+                      "& .MuiOutlinedInput-root": {
+                        background: "var(--glass-bg)",
+                        borderRadius: "var(--radius-lg)",
+                        "& fieldset": {
+                          borderColor: "var(--glass-border)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "var(--secondary-color)",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "var(--secondary-color)",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "var(--text-secondary)",
+                      },
+                      "& .MuiOutlinedInput-input": {
+                        color: "var(--text-primary)",
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FontAwesomeIcon
+                            icon={faLock}
+                            style={{ color: "var(--text-secondary)" }}
+                          />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            sx={{ color: "var(--text-secondary)" }}
+                          >
+                            <FontAwesomeIcon
+                              icon={showPassword ? faEyeSlash : faEye}
+                            />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  {error && (
+                    <Fade in timeout={300}>
+                      <Box
+                        sx={{
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px solid rgba(239, 68, 68, 0.3)",
+                          borderRadius: "var(--radius-md)",
+                          p: 2,
+                          mb: 2,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: "var(--danger-color)",
+                            fontSize: "0.9rem",
+                            textAlign: "center",
+                          }}
+                        >
+                          {error}
+                        </Typography>
+                      </Box>
+                    </Fade>
+                  )}
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    disabled={loading}
+                    className="btn btn-secondary"
+                    sx={{
+                      mt: 3,
+                      mb: 2,
+                      py: 1.5,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      background: loading
+                        ? "var(--text-muted)"
+                        : "var(--gradient-secondary)",
+                      borderRadius: "var(--radius-lg)",
+                      "&:hover": {
+                        transform: loading ? "none" : "translateY(-2px)",
+                        boxShadow: loading
+                          ? "none"
+                          : "var(--shadow-xl), 0 0 20px rgba(16, 185, 129, 0.3)",
+                      },
+                      "&:disabled": {
+                        color: "var(--text-secondary)",
+                      },
+                    }}
+                  >
+                    {loading ? (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <CircularProgress size={20} sx={{ color: "white" }} />
+                        {isSignUp ? "Creating Account..." : "Signing In..."}
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <FontAwesomeIcon
+                          icon={isSignUp ? faUserPlus : faSignInAlt}
+                        />
+                        {isSignUp
+                          ? "Create Employer Account"
+                          : "Sign In to Dashboard"}
+                      </Box>
+                    )}
+                  </Button>
+
+                  <Box sx={{ textAlign: "center", mt: 3 }}>
+                    <Link
+                      href="#"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      sx={{
+                        color: "var(--secondary-color)",
+                        textDecoration: "none",
+                        fontSize: "1rem",
+                        fontWeight: 500,
+                        "&:hover": {
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      {isSignUp
+                        ? "Already have an account? Sign In"
+                        : "Don't have an account? Create One"}
+                    </Link>
+                  </Box>
+                </Box>
+              </Box>
+            </Slide>
+          </Paper>
+        </Fade>
+      </Container>
+
+      {/* Success Modal */}
+      <Dialog
+        open={successModal}
+        onClose={() => setSuccessModal(false)}
+        PaperProps={{
+          sx: {
+            background: "var(--card-bg)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid var(--glass-border)",
+            borderRadius: "var(--radius-xl)",
+            color: "var(--text-primary)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: "center", pb: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                background: "var(--gradient-secondary)",
+                borderRadius: "50%",
+                p: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faCheckCircle}
+                style={{ color: "white", fontSize: "2rem" }}
+              />
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: "Poppins, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.5rem",
+              }}
+            >
+              Account Created Successfully!
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: "center", pb: 2 }}>
+          <Typography sx={{ color: "var(--text-secondary)", fontSize: "1rem" }}>
+            Your employer account has been created successfully. You can now
+            sign in to access your recruitment dashboard.
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
           <Button
             onClick={() => setSuccessModal(false)}
-            variant="contained"
-            color="success"
+            className="btn btn-secondary"
+            sx={{
+              px: 4,
+              py: 1.5,
+              background: "var(--gradient-secondary)",
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: "var(--shadow-xl), 0 0 20px rgba(16, 185, 129, 0.3)",
+              },
+            }}
           >
-            OK
+            <FontAwesomeIcon
+              icon={faBriefcase}
+              style={{ marginRight: "8px" }}
+            />
+            Continue to Sign In
           </Button>
         </DialogActions>
       </Dialog>
